@@ -30,31 +30,31 @@ cli = Client(base_url='unix://var/run/docker.sock')
 # Working Directory where the codebase is
 
 if args.working_dir is None:
-    wd = os.getcwd()
-else:
-    wd = args.working_dir
+    args.working_dir = os.getcwd()
 
 
 def build():
     pass
 
 
-def run(info):
+def run(args):
 
+    # Create container from the given arg inputs
     container = cli.create_container(
-        image='django',
-        command='/bin/sleep 1000',
-        name='Demo-Django-Docker',
-        entrypoint=[''],
-        working_dir=wd,
-        volumes=['']
+        image=args.image,
+        # command=args.command,
+        name=args.name,
+        entrypoint=args.entrypoint,
+        working_dir=args.working_dir,
+        volumes=args.volumes
     )
-
     print (container)
 
-    response = cli.start(container=container.get('Id'))
+    container_id = container['id']
+
+    response = cli.start(container=container.get(container_id))
     print (response)
 
 
 if __name__ == '__main__':
-    run()
+    run(args)
