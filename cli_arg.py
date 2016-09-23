@@ -2,7 +2,7 @@ import argparse
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument("--image", "-img", help="Your docker image name", type=str)
+parser.add_argument("--image", "-i", help="Your docker image name", type=str)
 
 parser.add_argument("--name", "-n", help="enter name", type=str)
 
