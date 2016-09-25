@@ -47,8 +47,15 @@ if args.working_dir is None:
 else:
     wd = args.working_dir
 
+if args.image is None:
+    args.image = 'django'
+
+if args.tag is None:
+    args.tag = 'latest'
 
 # Build function for Docker Build
+
+
 def build():
     pass
 
@@ -70,7 +77,7 @@ def run(args):
 
 
 if __name__ == '__main__':
-
+    # psudo code
     if args.mode == 'run' or 'r':
         run(args)
 
