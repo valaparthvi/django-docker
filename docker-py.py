@@ -1,14 +1,15 @@
 import os
 import argparse
 from docker import Client
-
+from io import BytesIO
 
 # Parser to get args input from CLI
 parser = argparse.ArgumentParser()
 
 # args flaps to get inputs
 parser.add_argument("--mode", "-m", help="Mode for Docker build/run")
-parser.add_argument("--image", "-i", help="Your docker image name", type=str)
+parser.add_argument("--image_name", "-i",
+                    help="Your docker image name", type=str)
 parser.add_argument("--name", "-n", help="Name of the Container", type=str)
 parser.add_argument("--entrypoint", "-e",
                     help="Your Entrypoint File '.sh'", type=str)
@@ -28,8 +29,9 @@ parser.add_argument("--container_limits", "-c",
 
 args = parser.parse_args()
 
-print (args.image)
-print(args.image, args.name, args.entrypoint, args.working_dir, args.volumes)
+print (args.image_name)
+print(args.image_name, args.name, args.entrypoint,
+      args.working_dir, args.volumes)
 
 
 # Cli is a Docker Client
@@ -47,8 +49,8 @@ if args.working_dir is None:
 else:
     wd = args.working_dir
 
-if args.image is None:
-    args.image = 'django'
+if args.image_name is None:
+    args.image_name = 'django'
 
 if args.tag is None:
     args.tag = 'latest'
@@ -57,24 +59,39 @@ if args.tag is None:
 
 
 def build(args):
-    #1 Make a Dockerfile from the args given, 
-    #  such as FROM image:label
-    #  RUN ...
-    #  CMD ...
-    #2 open in the file obj f
-    #3 cli.build with given params
-    #return the image id
+    # 1 Make a Dockerfile from the args given,
+    # 2 open in the file obj f
+    # 3 cli.build with given params
+    # return the image id
     try:
-        f = open(os.wd + dockerfile)
-    response = cli.build(rm=True, tag=args.tag)
-    pass
+        Dockerfile = "FROM " + args.image_name + ":" + args.tag + "\n MAINTAINER" + \
+            os.uname().nodename + "ENV DOCKYARD_SRC=" + wd + '''\nENV DOCKYARD_SRVHOME= /srv \n
+        ENV DOCKYARD_SRVPROJ=/srv/''' + wd +\
+            '''RUN apt-get update && apt-get -y upgrade \n
+        RUN apt-get install -y python3 python3-pip \n
+        WORKDIR $DOCKYARD_SRVHOME \nRUN mkdir media static logs \n
+        VOLUME ["$DOCKYARD_SRVHOME/media/","$DOCKYARD_SRVHOME/logs/"] \n
+        COPY $DOCKYARD_SRC $DOCKYARD_SRVPROJ \n
+        RUN pip3 install -r $DOCKYARD_SRVPRORJ/requirements.txt \n
+        EXPOSE 8000 \n
+        WORKDIR $DOCKYARD_SRVPROJ \n
+        COPY ''' + args.entrypoint + '''/ \n
+        ENTRYPOINT ["/''' + args.entrypoint + "\"]"
+
+        f = BytesIO(Dockerfile.encode('utf-8'))
+        response = [line for line in cli.build(
+            rm=True, tag=args.tag, fileobj=f)]
+        return response
+
+    except:
+        pass
 
 
 # Run function for Docker Run
 def run(args):
 
     container = cli.create_container(
-        image='django',
+        image_name='django',
         command='/bin/sleep 1000',
         name='Demo-Django-Docker',
         entrypoint=[''],
