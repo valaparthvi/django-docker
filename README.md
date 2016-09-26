@@ -2,8 +2,7 @@
 Integration of Django with Docker
 
 
-We are making util that can give easy integration for Django with Docker
-such as ```docker build``` for the django project would be ```python manage.py docker build```,
-taking all the necessary settings, it would build the corospondong Docker image for your django project.
+We are making a tool that will provide an easy integration for Django with Docker.
+This tool will perform operation similar to ```docker build```, but specifically for the django project with the use of a command similar to ```python3 manage.py docker build```, along with other required arguments, and build the corresponding Docker image for your Django project.
 
-We're still into the making it...
+Code in Progress...
