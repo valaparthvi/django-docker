@@ -56,7 +56,17 @@ if args.tag is None:
 # Build function for Docker Build
 
 
-def build():
+def build(args):
+    #1 Make a Dockerfile from the args given, 
+    #  such as FROM image:label
+    #  RUN ...
+    #  CMD ...
+    #2 open in the file obj f
+    #3 cli.build with given params
+    #return the image id
+    try:
+        f = open(os.wd + dockerfile)
+    response = cli.build(rm=True, tag=args.tag)
     pass
 
 
