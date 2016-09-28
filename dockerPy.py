@@ -2,11 +2,12 @@ import os
 import argparse
 from docker import Client
 from io import BytesIO
+from logs import *
 
 # Parser to get args input from CLI
 parser = argparse.ArgumentParser()
 
-# args flaps to get inputs
+# args flags to get inputs
 parser.add_argument("--mode", "-m", help="Mode for Docker build/run")
 parser.add_argument("--image_name", "-i",
                     help="Your docker image name", type=str)
@@ -26,7 +27,7 @@ parser.add_argument("--dockerfile", "-df", help="Dockerfile")
 parser.add_argument("--container_limits", "-c",
                     help='''JSON for container resources:
                     memory, memswap, cpushares, cpusetcpus''')
-
+parser.add_argument("--port", help="port to expose", type=int)
 args = parser.parse_args()
 
 print (args.image_name)
@@ -55,6 +56,8 @@ if args.image_name is None:
 if args.tag is None:
     args.tag = 'latest'
 
+maintainer = os.uname().nodename
+
 # Build function for Docker Build
 
 
@@ -64,30 +67,40 @@ def build(args):
     # 3 cli.build with given params
     # return the image id
     try:
-        Dockerfile = "FROM " + args.image_name + ":" + args.tag + "\n MAINTAINER" + \
-            os.uname().nodename + "ENV DOCKYARD_SRC=" + wd + '''\nENV DOCKYARD_SRVHOME= /srv \n
-        ENV DOCKYARD_SRVPROJ=/srv/''' + wd +\
-            '''RUN apt-get update && apt-get -y upgrade \n
-        RUN apt-get install -y python3 python3-pip \n
-        WORKDIR $DOCKYARD_SRVHOME \nRUN mkdir media static logs \n
-        VOLUME ["$DOCKYARD_SRVHOME/media/","$DOCKYARD_SRVHOME/logs/"] \n
-        COPY $DOCKYARD_SRC $DOCKYARD_SRVPROJ \n
-        RUN pip3 install -r $DOCKYARD_SRVPRORJ/requirements.txt \n
-        EXPOSE 8000 \n
-        WORKDIR $DOCKYARD_SRVPROJ \n
-        COPY ''' + args.entrypoint + '''/ \n
-        ENTRYPOINT ["/''' + args.entrypoint + "\"]"
+        if args.dockerfile is None:
+            Dockerfile = '''FROM %s:%s
+            MAINTAINER %s
+            ENV DOCKYARD_SRC=%s
+            ENV DOCKYARD_SRVHOME=/srv
+            ENV DOCKYARD_SRVPROJ=/srv/%s
+            RUN apt-get update && apt-get -y upgrade
+            RUN apt-get install -y python3 python3-pip
+            WORKDIR $DOCKYARD_SRVHOME
+            RUN mkdir media static logs
+            VOLUME %s
+            COPY $DOCKYARD_SRC $DOCKYARD_SRVPROJ
+            RUN pip3 install -r $DOCKYARD_SRVPROJ/requirements.txt
+            EXPOSE %d
+            WORKDIR $DOCKAYRD_SRVPROJ
+            COPY %s
+            ENTRYPOINT["%s"]''' % (args.image_name, args.tag, maintainer,
+                                   wd, wd, args.volumes, args.port,
+                                   args.entrypoint, args.entrypoint)
+            f = BytesIO(Dockerfile.encode('utf-8'))
+        else:
+            f = args.dockerfile
 
-        f = BytesIO(Dockerfile.encode('utf-8'))
         response = [line for line in cli.build(
             rm=True, tag=args.tag, fileobj=f)]
+        f.close()
         return response
 
-    except:
-        pass
-
+    except Exception as e:
+        logger.exception("%s", str(e))
 
 # Run function for Docker Run
+
+
 def run(args):
 
     container = cli.create_container(
@@ -101,10 +114,11 @@ def run(args):
 
     print (container)
     response = cli.start(container=container.get('Id'))
+    return response
 
 
 if __name__ == '__main__':
-    # psudo code
+    # pseudo code
     if args.mode == 'run' or 'r':
         run(args)
 
