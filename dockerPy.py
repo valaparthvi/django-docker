@@ -92,8 +92,12 @@ def build(args):
 
         response = [line for line in cli.build(
             rm=True, tag=args.tag, fileobj=f)]
+
+        # check if image was successfully build
+        if b"Successfully build" in response[len(response) - 1]:
+            return response
+
         f.close()
-        return response
 
     except Exception as e:
         logger.exception("%s", str(e))
@@ -104,7 +108,7 @@ def build(args):
 def run(args):
 
     container = cli.create_container(
-        image_name='django',
+        image='django',
         command='/bin/sleep 1000',
         name='Demo-Django-Docker',
         entrypoint=[''],
@@ -122,9 +126,11 @@ if __name__ == '__main__':
     if args.mode == 'run' or 'r':
         run(args)
 
-    if args.mode == 'build' or 'b':
+    elif args.mode == 'build' or 'b':
         build(args)
 
-    if args.mode == 'build+run' or 'b+r':
+    elif args.mode == 'build+run' or 'b+r':
         build(args)
         run(args)
+    else:
+        print("Enter mode.")
