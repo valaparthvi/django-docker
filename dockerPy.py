@@ -15,7 +15,7 @@ parser.add_argument("--name", "-n", help="Name of the Container", type=str)
 parser.add_argument("--entrypoint", "-e",
                     help="Your Entrypoint File '.sh'", type=str)
 parser.add_argument("--working_dir", "-w", help="Working Directory", type=str)
-parser.add_argument("--volumes", "-v", help="Volume list", type=list)
+parser.add_argument("--volumes", "-v", help="Volume list", type=str)
 parser.add_argument("--docker_host",
                     help='''tcp://ip-addr for the host where your docker daemon is running,
     other then host of your local system''')
@@ -30,10 +30,11 @@ parser.add_argument("--container_limits", "-c",
 parser.add_argument("--port", help="port to expose", type=int)
 args = parser.parse_args()
 
-print (args.image_name)
-print(args.image_name, args.name, args.entrypoint,
-      args.working_dir, args.volumes)
+print("\nImage name: %s \nName: %s \nEntrypoint: %s \nWorkingDir: %s \nVolumes: %s \n"
+      % (args.image_name, args.name, args.entrypoint, args.working_dir, args.volumes))
 
+logger.info("\nImageName: %s \nName: %s \nEntrypoint: %s \nWorkingDir: %s \nVolumes: %s",
+            args.image_name, args.name, args.entrypoint, args.working_dir, args.volumes)
 
 # Cli is a Docker Client
 # base_url is where the Docker daemon is running
@@ -111,9 +112,9 @@ def run(args):
         image='django',
         command='/bin/sleep 1000',
         name='Demo-Django-Docker',
-        entrypoint=[''],
+        entrypoint=args.entrypoint,
         working_dir=wd,
-        volumes=['']
+        volumes=args.volumes
     )
 
     print (container)
@@ -133,4 +134,4 @@ if __name__ == '__main__':
         build(args)
         run(args)
     else:
-        print("Enter mode.")
+        print("Try --mode build/run/build+run and then try again!")
