@@ -83,9 +83,9 @@ def build(args):
             EXPOSE %d
             WORKDIR $DOCKAYRD_SRVPROJ
             COPY %s
-            ENTRYPOINT["%s"]''' % (args.image_name, args.tag, maintainer,
-                                   wd, wd, args.volumes, args.port,
-                                   args.entrypoint, args.entrypoint)
+            ENTRYPOINT[%s]''' % (args.image_name, args.tag, maintainer,
+                                 wd, wd, args.volumes, args.port,
+                                 args.entrypoint, args.entrypoint)
             f = BytesIO(Dockerfile.encode('utf-8'))
         else:
             f = args.dockerfile
