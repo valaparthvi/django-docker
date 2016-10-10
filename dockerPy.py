@@ -15,7 +15,7 @@ parser.add_argument("--name", "-n", help="Name of the Container", type=str)
 parser.add_argument("--entrypoint", "-e",
                     help="Your Entrypoint File '.sh'", type=str)
 parser.add_argument("--working_dir", "-w", help="Working Directory", type=str)
-parser.add_argument("--volumes", "-v", help="Volume list", type=list)
+parser.add_argument("--volumes", "-v", help="Volume list", type=str)
 parser.add_argument("--docker_host",
                     help='''tcp://ip-addr for the host where your docker daemon is running,
     other then host of your local system''')
@@ -30,10 +30,11 @@ parser.add_argument("--container_limits", "-c",
 parser.add_argument("--port", help="port to expose", type=int)
 args = parser.parse_args()
 
-print (args.image_name)
-print(args.image_name, args.name, args.entrypoint,
-      args.working_dir, args.volumes)
+print("\nImage name: %s \nName: %s \nEntrypoint: %s \nWorkingDir: %s \nVolumes: %s \n"
+      % (args.image_name, args.name, args.entrypoint, args.working_dir, args.volumes))
 
+logger.info("\nImageName: %s \nName: %s \nEntrypoint: %s \nWorkingDir: %s \nVolumes: %s",
+            args.image_name, args.name, args.entrypoint, args.working_dir, args.volumes)
 
 # Cli is a Docker Client
 # base_url is where the Docker daemon is running
@@ -83,17 +84,21 @@ def build(args):
             EXPOSE %d
             WORKDIR $DOCKAYRD_SRVPROJ
             COPY %s
-            ENTRYPOINT["%s"]''' % (args.image_name, args.tag, maintainer,
-                                   wd, wd, args.volumes, args.port,
-                                   args.entrypoint, args.entrypoint)
+            ENTRYPOINT[%s]''' % (args.image_name, args.tag, maintainer,
+                                 wd, wd, args.volumes, args.port,
+                                 args.entrypoint, args.entrypoint)
             f = BytesIO(Dockerfile.encode('utf-8'))
         else:
             f = args.dockerfile
 
         response = [line for line in cli.build(
             rm=True, tag=args.tag, fileobj=f)]
+
+        # check if image was successfully build
+        if b"Successfully build" in response[len(response) - 1]:
+            return response
+
         f.close()
-        return response
 
     except Exception as e:
         logger.exception("%s", str(e))
@@ -104,12 +109,12 @@ def build(args):
 def run(args):
 
     container = cli.create_container(
-        image_name='django',
+        image='django',
         command='/bin/sleep 1000',
         name='Demo-Django-Docker',
-        entrypoint=[''],
+        entrypoint=args.entrypoint,
         working_dir=wd,
-        volumes=['']
+        volumes=args.volumes
     )
 
     print (container)
@@ -122,9 +127,11 @@ if __name__ == '__main__':
     if args.mode == 'run' or 'r':
         run(args)
 
-    if args.mode == 'build' or 'b':
+    elif args.mode == 'build' or 'b':
         build(args)
 
-    if args.mode == 'build+run' or 'b+r':
+    elif args.mode == 'build+run' or 'b+r':
         build(args)
         run(args)
+    else:
+        print("Try --mode build/run/build+run and then try again!")
